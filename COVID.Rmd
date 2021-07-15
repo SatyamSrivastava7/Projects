@@ -1,0 +1,202 @@
+---
+title: "COVID-19 Data Analytics"
+author: "StepUp Analytics"
+date: "16/11/2020"
+output: html_document
+---
+
+* Coronaviruses are a large family of viruses which may cause illness in animals or humans. In humans, several coronaviruses are known to cause respiratory infections ranging from the common cold to more severe diseases such as Middle East Respiratory Syndrome (MERS) and Severe Acute Respiratory Syndrome (SARS). The most recently discovered coronavirus causes coronavirus disease COVID-19 - World Health Organization.
+
+
+* The number of new cases are increasing day by day around the world. This dataset has information from the states and union territories of India at daily level.
+
+
+* The objective of using this dataset is to analysis the daily level increase in the level of rising COVID-19 cases on timeline axis. We will perform Time Series Analysis to predict the upcoming cases and Recovery rate using ARIMA Model.
+
+* The COVID-19,emerged in Wuhan(China) in December 2019 has now became a pandemic.India reported COVID-19 first case on 30th January 2020 when a student arrived in Kerala from Wuhan.Now this is widespread in whole India and we are going to analysis the same in this Notebook.
+
+##### DATASET DESCRIPTION:
+
+The Dataset of COVID_19_India consists of data till date;week after long Lockdown(UNLOCK 1.0) containing following attributes:
+
+* SNo. : Serial number
+* Date :Date of observation
+* Time : Time of observation
+* State/ Union territory :Name of the State / Union territory
+* ConfirmedIndianNational : Cumulative number of confirmed Indian Nationals
+* ConfirmedForeignNational : Cumulative number of confirmed Foreign Nationals
+* Cured : Cumulative number of cured people
+* Deaths : Cumulative number of death cases
+* Confirmed : Cumulative number of Confirmed cases
+
+* Total number of Columns: 09
+
+Answer the following set of questions from same dataset: 
+
+```{r}
+
+# 1. Write code to find basic Statistics of the dataset (Eg. Mean, median, std & Quantile of the data)
+
+getwd()                                                       #Calling library to read xl files
+path= "F:/Data_Science_Internship/R_Language/Assignment_1"     # Calling the file covid_19_india.csv
+setwd(path)
+data=read.csv("covid_19_india.csv", stringsAsFactors = FALSE, header = TRUE, na.strings = (c('','NA')))
+summary(data)                                                         #accessing the summary of the data we have in the provided file
+
+```
+
+```{r}
+
+# 2. Write code to find out total number of Cured, Confirmed and Death cases in the dataset.
+data
+Total_Cured =sum(data$Cured)                                  #Total cured cases
+Total_Cured
+Total_Confirmed = sum(data$Confirmed)                         #Total confirmed cases
+Total_Confirmed
+Total_Death= sum(data$Deaths)                                 #Total Death cases
+Total_Death
+data1=c(data, Total_Cured, Total_Confirmed, Total_Death)      #Creating new dataset 'data1'
+head(data1,5)                                                 #Getting top 5 data from data1
+tail(data1,5)                                                 #Getting last 5 data from data1
+data1
+```
+
+```{r}
+
+# 3. Write code to find out mean number of Cured, Confirmed and Death cases in the dataset. 
+
+avg_Cured= mean(data$Cured)              #Mean Cured Cases
+avg_Cured
+
+avg_Confirm=mean(data$Confirmed)         #Mean Confirmed Cases
+avg_Confirm
+
+avg_Death= mean(data$Deaths)             #Mean Death Cases
+avg_Death
+```
+
+```{r}
+
+# 4. Compute total number of Active cases in the dataset using the pre-defined variables Confirmed, cured and Death cases.
+
+T_Active= Total_Confirmed - Total_Cured - Total_Death     #Total no. of active cases
+T_Active
+```
+
+```{r}
+
+# 5.Compute total number of Closed cases in the dataset using the pre-defined variables Confirmed, cured and Death cases.
+ 
+T_Closed= sum(data$Cured)+ sum(data$Deaths)             #Total no. of Closed cases
+T_Closed
+
+```
+
+
+```{r}
+
+# 6. Write code for plotting Bar plot for Active cases per day and Closed cases per day in India using ggplot.
+
+data$Active = data$Confirmed-data$Cured - data$Deaths    #Total no. of active cases
+data
+
+library(ggplot2)                                         #Calling library function ggplot2
+
+ggplot(data, aes(y = Active)) +
+  geom_histogram(
+    color = "yellow",
+    linetype = "dashed",
+    fill = "green"
+  )                                                      #Creating histogram for active cases
+
+
+
+ggplot(data, aes(y = Active, x = State.UnionTerritory))  +
+  geom_point()  +
+xlab("States")+
+ylab('Active Cases')+
+ggtitle("Covid'19 Effect")                              #Creating point graphs for active cases
+```
+
+
+```{r}
+
+# 7. With help of visualization,find the State/Union Territory with highest number of Confirmed and Death cases.
+
+data[data$Confirmed == max(data$Confirmed),]     #State with highest no. of confirmed cases
+data[data$Deaths == max(data$Deaths),]           #State with highest no. of Deaths cases
+
+```
+
+
+```{r}
+
+# 8. Mortality Rate or Death rate is measure for number of Death. Write code to find Mortality rate of population with spread of COVID-19 using pre-defined variables Confirmed,cured and Death cases. 
+
+data$T_Cases= data$Confirmed+data$Cured+data$Deaths          #Total no. of Cases
+M_Rate= data$Deaths/data$Confirmed                           #Mortality Rate or Death Rate
+M_Rate
+
+library(ggplot2)
+ggplot(data, aes(y = M_Rate)) +
+  geom_histogram(
+    color = "red",
+    linetype = "dashed",
+    fill = "green"
+  )                                                         #Creating histogram showing Mortality Rate
+
+```
+
+```{r}
+
+# 9.Write code to compute mean Recovery Rate of population using variables in the dataset.
+
+R_Rate= data$Cured/data$Confirmed                   #Recovery Rate
+R_Rate
+
+library(ggplot2)
+ggplot(data, aes(x = R_Rate)) + geom_histogram(color = "yellow", linetype= "dashed", fill= "black")    #Bar Plot for the recovery rate
+```
+
+```{r}
+
+# 10.Write code to perform weekly Analysis on Confirmed and death cases, also plot the same for each using Bar plot.
+
+#Ans:-
+##########################
+library(dplyr)
+
+d= unique(data$State.UnionTerritory)
+
+func=function(k)                                     #Weekly confirmed cases
+  {
+    mS= filter(data, State.UnionTerritory == d[k])
+    W1_Analysis = mS[c(TRUE,rep(FALSE,6)), ]
+    W1_Analysis
+h5 = ggplot(W1_Analysis, aes(x = Confirmed, y = Date))  +
+  geom_point()  +
+  xlab("Confirmed") +
+  ylab("Date")  +
+  ggtitle(mS$State.UnionTerritory)
+plot(h5)
+}
+func(5)
+
+
+func1=function(k)                                     #Weekly death cases
+  {
+    mS= filter(data, State.UnionTerritory == d[k])
+    W1_Analysis = mS[c(TRUE,rep(FALSE,6)), ]
+    W1_Analysis
+
+h20 = ggplot(W1_Analysis, aes(x = Deaths, y = Date))  +
+  geom_point()  +
+  xlab("Deaths") +
+  ylab("Date")  +
+  ggtitle(mS$State.UnionTerritory)
+plot(h20)
+}
+func1(5)
+
+###########################
+```
